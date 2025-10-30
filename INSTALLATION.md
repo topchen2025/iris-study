@@ -294,8 +294,11 @@ ClassMethod BatchImport(directory As %String)
     While rs.%Next() {
         Set status = parser.ParseXMLFile(rs.Name)
         If $$$ISOK(status) {
-            // 处理数据
-            Do ..ProcessData(parser)
+            // 处理数据 - 这是一个示例方法，需要根据实际业务需求实现
+            // 例如：保存到数据库、发送到其他系统等
+            Set orgInfo = parser.GetOrganizationInfo()
+            Write "处理组织: ", orgInfo.name, !
+            // 在此添加你的业务逻辑
         }
     }
 }
@@ -332,14 +335,35 @@ For i=1:1:100 {
 如果需要卸载解析器：
 
 ```objectscript
-// 删除类
-Do ##class(%Dictionary.ClassDefinition).%DeleteId("HL7.v3.PRPMIN406110UV01Parser")
-Do ##class(%Dictionary.ClassDefinition).%DeleteId("HL7.v3.Demo")
-Do ##class(%Dictionary.ClassDefinition).%DeleteId("HL7.v3.Test")
+// 删除类（带错误检查）
+Set classes = $ListBuild("HL7.v3.PRPMIN406110UV01Parser", "HL7.v3.Demo", "HL7.v3.Test")
+For i=1:1:$ListLength(classes) {
+    Set className = $List(classes, i)
+    If ##class(%Dictionary.ClassDefinition).%ExistsId(className) {
+        Set status = ##class(%Dictionary.ClassDefinition).%DeleteId(className)
+        If $$$ISOK(status) {
+            Write "✓ 已删除类: ", className, !
+        } Else {
+            Write "✗ 删除失败: ", className, " - ", $System.Status.GetErrorText(status), !
+        }
+    } Else {
+        Write "  类不存在: ", className, !
+    }
+}
 
 // 删除包（如果为空）
-Do ##class(%Dictionary.PackageDefinition).%DeleteId("HL7.v3")
-Do ##class(%Dictionary.PackageDefinition).%DeleteId("HL7")
+Set packages = $ListBuild("HL7.v3", "HL7")
+For i=1:1:$ListLength(packages) {
+    Set pkgName = $List(packages, i)
+    If ##class(%Dictionary.PackageDefinition).%ExistsId(pkgName) {
+        Set status = ##class(%Dictionary.PackageDefinition).%DeleteId(pkgName)
+        If $$$ISOK(status) {
+            Write "✓ 已删除包: ", pkgName, !
+        } Else {
+            Write "  跳过包（可能包含其他类）: ", pkgName, !
+        }
+    }
+}
 ```
 
 ## 获取帮助
